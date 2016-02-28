@@ -74,12 +74,12 @@ party_color <- ifelse(result_df$winner_party=="D.-R.", rgb(0,1,0,0.5),
                              ifelse(result_df$winner_party=="Dem.", rgb(0,0,1,0.5),
                                     rgb(1,1,0,0.5))))
 
-pdf("Muraoka_PloblemSet04plot.pdf", height=8, width=7)
+pdf("Muraoka_PloblemSet04plot.pdf", height=8, width=7.5)
 
 par(mfrow=c(2,1))
 
 plot(result_df$year, result_df$turnout, pch=20, cex=2, col=party_color,
-     main="1. Changes in Turnout Rate over time", 
+     main="Figure 1. Changes in Turnout Rate over time", 
      xlab="Year", ylab="Turnout Rate", ylim=c(0, 1))
 
 o1 <- order(result_df$year)
@@ -99,7 +99,7 @@ party_color2 <- ifelse(withoutDR$winner_party=="Rep.", rgb(1,0,0,0.5),
                               rgb(1,1,0,0.5)))
 
 plot(withoutDR$turnout, withoutDR$pv_percent_margin, col=party_color2, pch=20,
-     main="2. Relationship between Turnout Rate and the Margin of Victory\n(The 1824 Election is Excluded Due to very Low Turnout Rate)",
+     main="Figure 2. Relationship between Turnout Rate and the Margin of Victory\n(The 1824 Election is Excluded Due to very Low Turnout Rate)",
      xlab="Turnout Rate", ylab="Margin of Victory")
 
 pl <- loess(pv_percent_margin ~ turnout, data=withoutDR, span=10)
@@ -108,5 +108,17 @@ o2 <- order(withoutDR$turnout)
 
 lines(pl$x[o2], pl$fitted[o2], lwd=2)
 
-dev.off()
+win_candid <- data.frame("candid"=result_df$winner, "party"=result_df$winner_party)
 
+lose_candid <- data.frame("candid"=result_df$loser, "party"=result_df$loser_party)
+
+all_candid <- unique(rbind(win_candid, lose_candid))
+
+all_candid$firstname <- sapply(as.character(all_candid$candid), 
+                               function(x){unlist(strsplit(x, split=" "))[1]})
+
+table(all_candid$firstname)
+
+
+
+dev.off()
