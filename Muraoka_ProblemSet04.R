@@ -19,7 +19,7 @@ wikiURL <- 'https://en.wikipedia.org/wiki/List_of_United_States_presidential_ele
 ## in (HINT: html_table())
 
 # here I decide to extract td tabs and create a vector for each column, instead of
-# table because, if I just extract table elements are not nicely organized
+# table because, if I just extract table, elements are not nicely organized
 
 result_table <- wikiURL %>% 
   read_html %>% 
@@ -54,7 +54,7 @@ cleanup1 <- function(x){
   vec2 <- vec1[length(vec1)] # get the last element of each vec1
   vec3 <- unlist(strsplit(vec2, split="^")) # split by "^"
                                             # which is applied to the first four
-                                            # elements (- sign seems to causes the 
+                                            # elements (- sign seems to cause the 
                                             # issue)
   vec4 <- vec3[length(vec3)] # get the last element of each vec3
   vec5 <- gsub("'", "-", vec4) # change "'" to "-"
@@ -141,7 +141,7 @@ pl <- loess(pv_percent_margin ~ turnout, data=withoutDR, span=10) # fit loess
 
 o2 <- order(withoutDR$turnout)
 
-lines(pl$x[o2], pl$fitted[o2], lwd=2) # plot the loess curve
+lines(pl$x[o2], pl$fitted[o2], lwd=2) # plot a loess curve
 
 win_candid <- data.frame("candid"=result_df$winner, "party"=result_df$winner_party)
                          # extract winner names and their party affiliation
@@ -225,3 +225,50 @@ dev.off()
 ##
 ## 2. Extract and merge the table
 ##
+
+library(rvest)
+
+wikiURL2 <- 'https://en.wikipedia.org/wiki/United_States_presidential_election'
+
+ec_table <- wikiURL2 %>% 
+  read_html %>% 
+  html_nodes("table") %>% # read table
+  .[[3]] %>% # select the second one
+  html_table() # get the table
+
+# get year
+
+colnames(ec_table)[2] <- "year"
+
+ec_table$year <- as.numeric(substring(ec_table$year, first=1, last=4))
+
+ec_table <- ec_table[ec_table$year %in% result_df$year,]
+
+get_number1 <- function(x){
+  second_ele <- unlist(strsplit(x, split="â???" "))[2]
+  first_ele <- unlist(strsplit(second_ele, split="[", fixed=TRUE))[1]
+  return(as.numeric(first_ele))
+}
+
+ec_table$winner_ec <- sapply(ec_table$Winner, get_number1)
+
+get_number2 <- function(x, y){
+  ele1 <- unlist(strsplit(x, split="â???" "))
+  ele2 <- unlist(strsplit(ele1, split="\n"))
+  for(i in 1:length(ele2[[1]])){
+    if(y %in% unlist(strsplit(ele2[[1]][i], split=" "))){
+      ele3 <- ele2[[1]][i+1]
+    }
+  }
+  ele4 <- unlist(strsplit(ele3, split="[", fixed=TRUE))[1]
+  return(ele4)
+}
+
+xxx <- function(x, y){
+  print(c(x, y))
+}
+
+loser_name <- sapply(as.character(result_df$loser[order(result_df$year)]),
+                     function(x){unlist(strsplit(x, split=" "))})
+
+ec_table$winner_ec <- a <- mapply(get_number2, ec_table$`Other major candidates[27]`, loser_first)
