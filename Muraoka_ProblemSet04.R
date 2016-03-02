@@ -7,6 +7,14 @@
 
 
 ##
+## NOTE: When I upload the file to GitHub, I find that encoding of some codes in line
+## 63 ("^"), 68 ("'"), 85 ("'"), 87 ("^"), 292 ("â???" ") and () change. Hence, some
+## functions do not work properly if this file is downloaded from GitHub.
+##
+
+
+
+##
 ## 1. Extract the table and plot something
 ##
 
@@ -95,14 +103,14 @@ cleanup2 <- function(x){ # function to clean up pv_margin_temp
   vec6 <- paste(vec5, collapse="") # merge numbers
   if(unlist(strsplit(vec6, split=""))[1] != "-"){ # if the first element is not "-"
     vec_len <- length(unlist(strsplit(vec6, split=""))) # get the length of number
-    vec6 <- as.numeric(substr(vec6, start=vec_len/2+1, stop=vec_len))
+    vec6 <- substr(vec6, start=vec_len/2+1, stop=vec_len)
                        # just use the second half of numbers
   }
   return(vec6) # this is the margin of popular vote
 }
 
 # apply the function above
-pv_margin <- sapply(pv_margin_temp, cleanup2)
+pv_margin <- as.numeric(sapply(pv_margin_temp, cleanup2))
 
 # get the name of the loser
 loser <- as.character(result_table[seq(9, length(result_table), by=11)] %>% 
