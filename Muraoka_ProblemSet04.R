@@ -49,7 +49,7 @@ pv_percent <- as.numeric(substring(result_table[seq(5, length(result_table), by=
 pv_percent_margin_temp <- result_table[seq(6, length(result_table), by=11)] %>% 
   html_text() # first just extract text
 
-cleanup1 <- function(x){
+cleanup1 <- function(x){ # function to clean up pv_percent_margin_temp
   vec1 <- unlist(strsplit(x, split="%")) # delete all %
   vec2 <- vec1[length(vec1)] # get the last element of each vec1
   vec3 <- unlist(strsplit(vec2, split="^")) # split by "^"
@@ -70,6 +70,40 @@ pv_temp <- result_table[seq(7, length(result_table), by=11)] %>% html_text()
 
 pv <- as.numeric(gsub(",", "", pv_temp)) # delete ","
 
+# get popular voter margin
+pv_margin_temp <- result_table[seq(8, length(result_table), by=11)] %>% html_text()
+
+cleanup2 <- function(x){ # function to clean up pv_margin_temp
+  vec1 <- gsub("'", "-", x) # replace "'" with "-"
+  vec2 <- gsub(",", "", vec1) # delete ","
+  vec3 <- unlist(strsplit(vec2, split="^")) # split by "^"
+  if(length(vec3)==2){ # if, after split by "^", length is 2
+    vec4 <- vec3[2] # get the second element
+  }
+  else{ # if length is 1
+    vec4 <- vec3 # just get the same element
+  }
+  vec5 <- unlist(strsplit(vec4, split="")) # split to sigle number
+  while(vec5[1]=="0"){ # while the first element is 0
+      if(vec5[1]=="0" & vec5[2]=="0"){ # if the first and second elements are 0
+        vec5 <- vec5[2:length(vec5)] # delete the first numbers
+      }
+      else{ # if only the first number is 0
+        vec5 <- paste(vec5[2:length(vec5)], collapse="") # delete the first number
+      }
+  }
+  vec6 <- paste(vec5, collapse="") # merge numbers
+  if(unlist(strsplit(vec6, split=""))[1] != "-"){ # if the first element is not "-"
+    vec_len <- length(unlist(strsplit(vec6, split=""))) # get the length of number
+    vec6 <- as.numeric(substr(vec6, start=vec_len/2+1, stop=vec_len))
+                       # just use the second half of numbers
+  }
+  return(vec6) # this is the margin of popular vote
+}
+
+# apply the function above
+pv_margin <- sapply(pv_margin_temp, cleanup2)
+
 # get the name of the loser
 loser <- as.character(result_table[seq(9, length(result_table), by=11)] %>% 
                         html_nodes("a") %>% 
@@ -86,7 +120,10 @@ turnout <- as.numeric(substring(result_table[seq(11, length(result_table), by=11
 
 # combine all the vectors above and create data.frame
 result_df <- data.frame(year, winner, winner_party, pv_percent, 
-                              pv_percent_margin, pv, loser, loser_party, turnout)
+                        pv_percent_margin, pv, pv_margin, loser, loser_party, 
+                        turnout)
+
+rownames(result_df) <- 1:dim(result_df)[1] # clean up row names
 
 unique(result_df$winner_party) # check unique party names
 
@@ -95,9 +132,9 @@ party_color <- ifelse(result_df$winner_party=="D.-R.", rgb(0,1,0,0.5),
                              ifelse(result_df$winner_party=="Dem.", rgb(0,0,1,0.5),
                                     rgb(1,1,0,0.5)))) # set color for each party
 
-pdf("Muraoka_PloblemSet04plot.pdf", height=12, width=8) # setting pdf output
+pdf("Muraoka_PloblemSet04plot.pdf", height=13, width=8) # setting pdf output
 
-par(mfrow=c(2,1))
+par(mfrow=c(3,1))
 
 # Figure 1 shows changes in turnout rate overime. It also shows which party won the
 # election (blue=Democratic, red=Republican, green=D-R, yellow=Whig). In 1824, 
@@ -216,7 +253,6 @@ par(mar=c(3.1,4.1,5.2,2.1))
 biplot(name_party_crp, xlim=c(-1.7, 2), ylim=c(-1.5, 0.7),
        col=c(rgb(0.1,0.1,0.1,0.8), rgb(0.2,0.7,0.4,0.8)), cex=c(1.3,1),
        main="Figure3. Correspondence Analysis of \nCandidates' First Names and Party Affiliation\n")
-
 
 dev.off()
 
