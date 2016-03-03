@@ -8,7 +8,7 @@
 
 ##
 ## NOTE: When I upload the file to GitHub, I find that encoding of some codes in line
-## 63 ("^"), 68 ("'"), 85 ("'"), 87 ("^"), 295 ("â???" ") and change. Hence, some
+## 63 ("^"), 68 ("'"), 85 ("'"), 87 ("^"), 295 ("â???" ") change. Hence, some
 ## functions do not work properly if this file is downloaded from GitHub.
 ##
 
