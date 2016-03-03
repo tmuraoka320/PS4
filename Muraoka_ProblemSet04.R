@@ -8,7 +8,7 @@
 
 ##
 ## NOTE: When I upload the file to GitHub, I find that encoding of some codes in line
-## 63 ("^"), 68 ("'"), 85 ("'"), 87 ("^"), 292 ("â???" ") and () change. Hence, some
+## 63 ("^"), 68 ("'"), 85 ("'"), 87 ("^"), 295 ("â???" ") and change. Hence, some
 ## functions do not work properly if this file is downloaded from GitHub.
 ##
 
@@ -280,39 +280,56 @@ ec_table <- wikiURL2 %>%
   .[[3]] %>% # select the second one
   html_table() # get the table
 
-# get year
-
+# change column names
 colnames(ec_table)[2] <- "year"
 
+colnames(ec_table)[4] <- "other"
+
+# change year to numeric
 ec_table$year <- as.numeric(substring(ec_table$year, first=1, last=4))
 
+# subset ec_table so that its years are consistent with result_df
 ec_table <- ec_table[ec_table$year %in% result_df$year,]
 
-get_number1 <- function(x){
-  second_ele <- unlist(strsplit(x, split="â???" "))[2]
+get_number1 <- function(x){ # function to get the winner's number of electoral college
+  second_ele <- unlist(strsplit(x, split="â???" "))[2] # split by "â???" " and
+                                                     # get the second element
   first_ele <- unlist(strsplit(second_ele, split="[", fixed=TRUE))[1]
-  return(as.numeric(first_ele))
+                      # split by "[" and get the first element
+  return(as.numeric(first_ele)) # return the number
 }
 
+# apply the function above to get the winners' number of electoral college 
 ec_table$winner_ec <- sapply(ec_table$Winner, get_number1)
 
-get_number2 <- function(x, y){
-  ele1 <- unlist(strsplit(x, split="â???" "))
-  ele2 <- unlist(strsplit(ele1, split="\n"))
-  for(i in 1:length(ele2[[1]])){
-    if(y %in% unlist(strsplit(ele2[[1]][i], split=" "))){
-      ele3 <- ele2[[1]][i+1]
-    }
+get_number2 <- function(x, y){ # function to get the loser's number of electoral college
+  ele1 <- unlist(strsplit(x, split="\n")) # split by "\n"
+  ele2 <- unlist(strsplit(ele1, split="[", fixed=TRUE)) # split by "["
+  ele3 <- unlist(strsplit(ele2, split=" ")) # split by " "
+  if(ele3[1]=="Horace"){ # except for the 1872 election, loser's number of electoral
+                         # college is equal to the maximum number in the column
+                         # "ec_table$other". I do not know what happend in 1872, but
+                         # it is the only unusual pattern. Hence, if the lost
+                         # candiate's first name is "Horace", ele4 is 0, which is the
+                         # number of electoral college for Horace Greeley
+    ele4 <- 0
   }
-  ele4 <- unlist(strsplit(ele3, split="[", fixed=TRUE))[1]
+  else{ # if the lost candidate's first name is not "Horace", get the max number in
+        # a vector
+    ele4 <- max(na.omit(as.numeric(ele3))) # force a vector to be numeric, and get
+                                           # the maximum number in it (this function
+                                           # gives worning because when forcing a
+                                           # vector to be numeric, NA is introduced
+                                           # by coercion).
+  }
   return(ele4)
 }
 
-xxx <- function(x, y){
-  print(c(x, y))
-}
+# apply the function above and get the losers' number of electoral college
+ec_table$loser_ec <- sapply(ec_table$other, get_number2)
 
-loser_name <- sapply(as.character(result_df$loser[order(result_df$year)]),
-                     function(x){unlist(strsplit(x, split=" "))})
+# merge the two dataset by "year"
+final_df <- merge(result_df, ec_table[,c(2,5,6)], by="year")
 
-ec_table$winner_ec <- a <- mapply(get_number2, ec_table$`Other major candidates[27]`, loser_first)
+# export to csv.file
+write.csv(final_df, "Muraoka_ProblemSet04Dataset.csv")
