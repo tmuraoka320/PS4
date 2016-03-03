@@ -7,14 +7,6 @@
 
 
 ##
-## NOTE: When I upload the file to GitHub, I find that encoding of some codes in line
-## 63 ("^"), 68 ("'"), 85 ("'"), 87 ("^"), 295 ("â???" ") change. Hence, some
-## functions do not work properly if this file is downloaded from GitHub.
-##
-
-
-
-##
 ## 1. Extract the table and plot something
 ##
 
@@ -57,15 +49,19 @@ pv_percent <- as.numeric(substring(result_table[seq(5, length(result_table), by=
 pv_percent_margin_temp <- result_table[seq(6, length(result_table), by=11)] %>% 
   html_text() # first just extract text
 
+hat <- substr(pv_percent_margin_temp[1], start=8, stop=8) # extract "^"
+
+comma <- substr(pv_percent_margin_temp[1], start=9, stop=9) # extract "'"
+
 cleanup1 <- function(x){ # function to clean up pv_percent_margin_temp
   vec1 <- unlist(strsplit(x, split="%")) # delete all %
   vec2 <- vec1[length(vec1)] # get the last element of each vec1
-  vec3 <- unlist(strsplit(vec2, split="^")) # split by "^"
+  vec3 <- unlist(strsplit(vec2, split=hat)) # split by "^"
                                             # which is applied to the first four
                                             # elements (- sign seems to cause the 
                                             # issue)
   vec4 <- vec3[length(vec3)] # get the last element of each vec3
-  vec5 <- gsub("'", "-", vec4) # change "'" to "-"
+  vec5 <- gsub(comma, "-", vec4) # change "'" to "-"
   vec6 <- as.numeric(vec5)/100 # change to a 0-1 scale
   return(vec6)
 }
@@ -81,10 +77,14 @@ pv <- as.numeric(gsub(",", "", pv_temp)) # delete ","
 # get popular voter margin
 pv_margin_temp <- result_table[seq(8, length(result_table), by=11)] %>% html_text()
 
+hat <- substr(pv_margin_temp[1], start=8, stop=8) # extract "^"
+
+comma <- substr(pv_margin_temp[1], start=9, stop=9) # extract "'"
+
 cleanup2 <- function(x){ # function to clean up pv_margin_temp
-  vec1 <- gsub("'", "-", x) # replace "'" with "-"
+  vec1 <- gsub(comma, "-", x) # replace "'" with "-"
   vec2 <- gsub(",", "", vec1) # delete ","
-  vec3 <- unlist(strsplit(vec2, split="^")) # split by "^"
+  vec3 <- unlist(strsplit(vec2, split=hat)) # split by "^"
   if(length(vec3)==2){ # if, after split by "^", length is 2
     vec4 <- vec3[2] # get the second element
   }
@@ -291,9 +291,11 @@ ec_table$year <- as.numeric(substring(ec_table$year, first=1, last=4))
 # subset ec_table so that its years are consistent with result_df
 ec_table <- ec_table[ec_table$year %in% result_df$year,]
 
+aed <- substr(ec_table$Winner[1], start=44, stop=47) # extract "â???" " 
+
 get_number1 <- function(x){ # function to get the winner's number of electoral college
-  second_ele <- unlist(strsplit(x, split="â???" "))[2] # split by "â???" " and
-                                                     # get the second element
+  second_ele <- unlist(strsplit(x, split=aed))[2] # split by "â???" " and
+                                                  # get the second element
   first_ele <- unlist(strsplit(second_ele, split="[", fixed=TRUE))[1]
                       # split by "[" and get the first element
   return(as.numeric(first_ele)) # return the number
@@ -331,5 +333,5 @@ ec_table$loser_ec <- sapply(ec_table$other, get_number2)
 # merge the two dataset by "year"
 final_df <- merge(result_df, ec_table[,c(2,5,6)], by="year")
 
-# export to csv.file
-write.csv(final_df, "Muraoka_ProblemSet04Dataset.csv")
+# export to .RData
+save(final_df, file="Muraoka_ProblemSet04Dataset.RData")
